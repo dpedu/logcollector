@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
-import logging
 import re
 import datetime
 import os
 import sys
-
+import traceback
 from time import sleep
-from collections import defaultdict,namedtuple
+from collections import defaultdict, namedtuple
 from concurrent.futures import ThreadPoolExecutor
 
 import paramiko
 
 
-logfile_pattern = re.compile(r'(?P<network>[^_]+)_(?P<channel>[^_]+)_(?P<date>[0-9]+)\.log')
+logfile_pattern = re.compile(r'(?P<network>[^_]+)_(?P<channel>.+)_(?P<date>[0-9]+)\.log')
 
 LogFile = namedtuple("LogFile", "filename network channel date")
+
 
 class ZNCLogFetcher(object):
     def __init__(self, host, user, ssh_key, znc_user_dir, output_dir, keep_days):
@@ -50,8 +50,7 @@ class ZNCLogFetcher(object):
             sftp = c.open_sftp()
             sftp.chdir(self.znc_user_dir)
             users = sftp.listdir()
-        #return users
-        return ["xMopxShell2", "voice_of_reason"]
+        return users
 
     def discover_user_logs(self, username, max_age=None):
         """
@@ -62,10 +61,10 @@ class ZNCLogFetcher(object):
             userlogdir = os.path.join(self.znc_user_dir, username, 'moddata/log')
 
             try:
-                stat = sftp.stat(userlogdir)
+                stat = sftp.stat(userlogdir)  # NOQA
             except:
                 print("User {} has no logdir".format(username))
-                return []
+                return {}
             sftp.chdir(userlogdir)
 
             by_channel = defaultdict(list)
@@ -77,7 +76,6 @@ class ZNCLogFetcher(object):
                     if not max_age or log_date < max_age:
                         by_channel[channel].append(LogFile(logfile.filename, network, channel, log_date))
                 except:
-                    #import pdb ; pdb.set_trace()
                     print("Could not parse: {}".format(logfile.filename))
         return dict(by_channel)
 
@@ -98,7 +96,7 @@ class ZNCLogFetcher(object):
                     for d in [
                         os.path.join(self.output_dir),
                         os.path.join(self.output_dir, zncuser),
-                        os.path.join(self.output_dir, zncuser, logfiles[0].network)
+                        os.path.join(self.output_dir, zncuser, logfiles[0].network.lower())
                     ]:
                         try:
                             os.mkdir(d)
@@ -106,8 +104,9 @@ class ZNCLogFetcher(object):
                             pass
 
                     tp.submit(self.download_channel, zncuser, channel, logfiles)
-                    sys.stdout.write("+") ; sys.stdout.flush()
-                    sleep(0.1) # Prevents swarm of ssh connections
+                    sys.stdout.write("+")
+                    sys.stdout.flush()
+                    sleep(0.2)  # Prevents swarm of ssh connections
 
     def download_channel(self, username, channel, logfiles):
         """
@@ -121,12 +120,13 @@ class ZNCLogFetcher(object):
                 month_file = None
                 current_month = -1
                 for f in logfiles:
-                    #print(f)
-                    sys.stdout.write(".") ; sys.stdout.flush()
+                    sys.stdout.write(".")
+                    sys.stdout.flush()
                     if f.date.month != current_month:
                         if month_file:
                             month_file.close()
-                        month_file = open(os.path.join(args.output, username, f.network, "{}_{}{:02}.log".format(f.channel, f.date.year, f.date.month)), 'wb')
+                        month_file = open(os.path.join(args.output, username, f.network.lower(), "{}_{}{:02}.log"
+                                          .format(f.channel, f.date.year, f.date.month)), 'wb')
                         current_month = f.date.month
                     fh = sftp.open(f.filename)
                     month_file.write("# BEGIN FILE '{}'\n".format(f.filename).encode("UTF-8"))
@@ -137,11 +137,13 @@ class ZNCLogFetcher(object):
                         month_file.write(data)
                     fh.close()
                     month_file.write("# END FILE '{}'\n".format(f.filename).encode("UTF-8"))
+                if month_file:
+                    month_file.close()
                 sftp.close()
-                sys.stdout.write("finished {}".format(channel)) ; sys.stdout.flush()
-            except Exception as e:
-                  print("EXCEPTION")
-                  print(e)
+                sys.stdout.write("finished {}".format(channel))
+                sys.stdout.flush()
+            except:
+                print(traceback.format_exc())
 
 
 if __name__ == '__main__':
@@ -150,12 +152,13 @@ if __name__ == '__main__':
     parser.add_argument("-a", "--host", required=True, help="host to fetch from")
     parser.add_argument("-u", "--user", required=True, help="ssh user")
     parser.add_argument("-k", "--key", required=True, help="ssh key")
-    
+
     parser.add_argument("-d", "--dir", required=True, help="user dir to find logs from")
     parser.add_argument("-o", "--output", required=True, help="local output dir")
-    
+
     parser.add_argument("-l", "--keep-days", type=int, help="number of days to keep", default=90)
 
     args = parser.parse_args()
-    f = ZNCLogFetcher(host=args.host, user=args.user, ssh_key=args.key, znc_user_dir=args.dir, output_dir=args.output, keep_days=args.keep_days)
+    f = ZNCLogFetcher(host=args.host, user=args.user, ssh_key=args.key, znc_user_dir=args.dir, output_dir=args.output,
+                      keep_days=args.keep_days)
     f.run()
