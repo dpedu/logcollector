@@ -5,9 +5,25 @@ import datetime
 import argparse
 from collections import defaultdict
 from tabulate import tabulate
+from concurrent.futures import ProcessPoolExecutor
 
 from irclogtools.containers import CombinedLogfile
 from irclogtools.tools import discover_logfiles
+
+
+def archiveit(output_dir, _channel, _logfiles):
+    fout = os.path.join(output_dir, "{}.log".format(_channel))
+    log = CombinedLogfile(fout)
+    for item in _logfiles:
+        log.add_section(item)
+    log.write()
+
+
+def by_totalsize(logfiles):
+    """
+    Given a list of `LogFile`s, return the total reported size, in bytes
+    """
+    return sum([i.bytes() for i in logfiles])
 
 
 def main():
@@ -63,12 +79,9 @@ def main():
         _display = [[k, len(v)] for k, v in by_channel.items()]
         print(tabulate(sorted(_display, key=lambda x: x[0].lower()), headers=["channel", "num logs"]) + "\n")
 
-        for channel, logfiles in by_channel.items():
-            fout = os.path.join(args.output, "{}.log".format(channel))
-            log = CombinedLogfile(fout)
-            for item in logfiles:
-                log.add_section(item)
-            log.write()
+        with ProcessPoolExecutor(max_workers=os.cpu_count() * 2) as tp:
+            for channel, logfiles in sorted(by_channel.items(), key=lambda x: by_totalsize(x[1]), reverse=True):
+                tp.submit(archiveit, args.output, channel, logfiles)
 
     elif args.action == "inspect":
         log = CombinedLogfile(args.file)
