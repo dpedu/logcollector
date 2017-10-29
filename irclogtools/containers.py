@@ -96,7 +96,9 @@ class CombinedLogfile(object):
                     meta = {"name": section.name,
                             "network": section.network,
                             "channel": section.channel,
-                            "date": section.date.strftime("%Y%m%d")}
+                            "date": section.date.strftime("%Y%m%d"),
+                            "lines": section.lines(),
+                            "size": section.bytes()}
                     f.write("{} {}\n".format(self.PORTIONHEADER, json.dumps(meta, sort_keys=True)).encode("UTF-8"))
                 contents = section.contents()
                 f.write(contents)
@@ -168,6 +170,19 @@ class LogFile(object):
         with open(os.path.join(self.dir, self.name), "rb") as f:
             return f.read()
 
+    def lines(self):
+        """
+        Return line count
+        """
+        lines = 0
+        with open(os.path.join(self.dir, self.name), "rb") as f:
+            for _ in f.readlines():
+                lines += 1
+        return lines
+
+    def bytes(self):
+        return os.path.getsize(os.path.join(self.dir, self.name))
+
     @staticmethod
     def create(fname):
         return LogFile(os.path.basename(fname), root=os.path.dirname(fname))
@@ -185,3 +200,9 @@ class VirtualLogFile(LogFile):
 
     def contents(self):
         return self.data
+
+    def lines(self):
+        return len(self.data.split(b'\n'))
+
+    def bytes(self):
+        return len(self.data)
