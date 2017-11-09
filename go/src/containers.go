@@ -5,18 +5,10 @@ import (
     "os"
     "fmt"
     "bufio"
-    // "strings"
     "bytes"
     "encoding/json"
-    // zmq "github.com/pebbe/zmq4"
-    // "strconv"
     "time"
     "sort"
-    // "strings"
-    // "math/rand"
-    // "errors"
-    // "bytes"
-    // "sync"
 )
 
 type errorString struct {  // TODO "trivial implementation of error"

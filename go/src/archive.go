@@ -30,8 +30,6 @@ var (
     cmd_split = kingpin.Command("split", "Split archives by date")
 )
 
-
-
 type LogInfo struct {
     file os.FileInfo
     path string
@@ -56,8 +54,9 @@ func discover_logs(srcdir string) ([]LogInfo) {
     return logs
 }
 
+var re_fname = regexp.MustCompile("((?P<network>[^_]+)_)?(?P<channel>.+)_(?P<date>[0-9]+)\\.log")
+
 func parse_log_name(logname string) (LogInfo) {
-    re_fname := regexp.MustCompile("((?P<network>[^_]+)_)?(?P<channel>.+)_(?P<date>[0-9]+)\\.log")
 
     matches := re_fname.FindStringSubmatch(logname)
     if len(matches) != 5 {  // re should match [garbage, garbage, network, channel, date]
@@ -163,8 +162,6 @@ func cmd_import_do(srcdir string, outdir string, impall bool) {
     wg.Wait()
 }
 
-
-
 func cmd_inspect_do(fpath string) {
     log := &CombinedLogfile{
         fpath: fpath,
@@ -190,7 +187,6 @@ func cmd_inspect_do(fpath string) {
     asText, _ := tabulate.Tabulate(table, layout)
     fmt.Print(asText)
 }
-
 
 func main() {
     switch kingpin.Parse() {
