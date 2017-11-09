@@ -11,6 +11,11 @@ import (
     "sort"
 )
 
+
+const ARCHTIMEFMT string = "20060102"
+const ARCHTIMEFMT2 string = "2006-01-02"
+
+
 type errorString struct {  // TODO "trivial implementation of error"
     s string
 }
@@ -19,9 +24,13 @@ func (e *errorString) Error() string {
 }
 
 func ParseDate(datestr string) (time.Time) {
-    thetime, err := time.Parse("20060102", datestr)
+    thetime, err := time.Parse(ARCHTIMEFMT, datestr)
     if err != nil {
-        panic(err)
+        thetime, err := time.Parse(ARCHTIMEFMT2, datestr)
+        if err != nil {
+            panic(err)
+        }
+        return thetime
     }
     return thetime
 }
@@ -98,7 +107,7 @@ func (self *CombinedLogfile) Write(destpath string) (error) {
 func (self *CombinedLogfile) ConvertMetaToJson(meta PortionMeta) string {
     jmeta := JsonPortionMeta{
         Channel: meta.Channel,
-        Date: meta.Date.Format("20060102"),
+        Date: meta.Date.Format(ARCHTIMEFMT),
         Lines: meta.Lines,
         Name: meta.Name,
         Network: meta.Network,
@@ -245,10 +254,19 @@ func (self *CombinedLogfile) GetRange() (time.Time, time.Time, error) {
     return self.portions[0].meta.Date, self.portions[len(self.portions)-1].meta.Date, nil
 }
 
-func (self *CombinedLogfile) GetSpans() {
-    // TODO return slice of (start, end) time ranges present in the archive
+// Exclude portions based on before/after some date
+func (self *CombinedLogfile) Limit(when time.Time, before bool) {
+    b := self.portions[:0]  // https://github.com/golang/go/wiki/SliceTricks#filtering-without-allocating
+    for _, x := range self.portions {
+        if before && (when.Before(x.meta.Date) || when == x.meta.Date) {
+            b = append(b, x)
+        } else if !before && (!when.Before(x.meta.Date) || when == x.meta.Date) {
+            b = append(b, x)
+        }
+    }
+    self.portions = b
 }
 
-func (self *CombinedLogfile) Limit(start time.Time, end time.Time) {
-    // TODO drop all portions older or younger than
+func (self *CombinedLogfile) GetSpans() {
+    // TODO return slice of (start, end) time ranges present in the archive
 }
