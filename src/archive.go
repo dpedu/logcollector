@@ -38,6 +38,8 @@ var (
     cmd_split_src = cmd_split.Flag("src", "Source archive file").Short('s').Required().ExistingFile()
     cmd_split_dest = cmd_split.Flag("dest", "Dir to dump logs into").Short('d').Required().String()
 
+    cmd_gap = kingpin.Command("gaps", "Find time gaps in archives")
+    cmd_gap_src = cmd_gap.Flag("file", "Source archive file").Short('f').Required().ExistingFile()
 )
 
 type LogInfo struct {
@@ -235,6 +237,55 @@ func cmd_split_do(srcpath string, destdir string) {
     fmt.Printf("Wrote %v logs\n", logs_written)
 }
 
+type Gap struct {
+    start time.Time
+    end time.Time
+    days int
+}
+
+// Find time windows with no logs in the archive
+func cmd_gaps_do(srcpath string) {
+    var gaps []Gap;
+
+    log := &CombinedLogfile{
+        fpath: srcpath,
+    }
+    log.Parse()
+    log.Sort()
+
+    var lastPortion LogPortion;
+    first := true
+
+    for _, portion := range log.portions {
+        if first {
+            first = false
+        } else {
+            lastShouldEqual := portion.meta.Date.AddDate(0, 0, -1)  // Subtract 1 day
+            if lastShouldEqual != lastPortion.meta.Date {
+                breakstart := lastPortion.meta.Date.AddDate(0, 0, 1)
+                breakend := portion.meta.Date.AddDate(0, 0, -1)
+                gaps = append(gaps, Gap{start: breakstart,
+                                        end: breakend,
+                                        days: int(portion.meta.Date.Sub(breakstart).Hours()) / 24})
+            }
+        }
+        lastPortion = portion
+    }
+
+
+    table := [][]string{}
+    for _, gap := range gaps {
+        table = append(table, []string{gap.start.Format(ARCHTIMEFMT2),
+                                       gap.end.Format(ARCHTIMEFMT2),
+                                       strconv.Itoa(gap.days)})
+    }
+
+    layout := &tabulate.Layout{Headers:[]string{"start", "end", "days"}, Format:tabulate.SimpleFormat}
+    asText, _ := tabulate.Tabulate(table, layout)
+    fmt.Println("Missing log segments:\n")
+    fmt.Print(asText)
+}
+
 func main() {
     switch kingpin.Parse() {
         case "import":
@@ -245,5 +296,7 @@ func main() {
             cmd_slice_do(*cmd_slice_src, *cmd_slice_dest, *cmd_slice_start, *cmd_slice_end, *cmd_slice_raw)
         case "split":
             cmd_split_do(*cmd_split_src, *cmd_split_dest)
+        case "gaps":
+            cmd_gaps_do(*cmd_gap_src)
     }
 }
