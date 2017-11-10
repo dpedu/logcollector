@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -ex
 
 dpkg-buildpackage -us -uc -b
 

@@ -22,6 +22,7 @@ var (
     cmd_import_dir = cmd_import.Flag("dir", "dir containing raw znc log files").Short('d').Required().String()
     cmd_import_output = cmd_import.Flag("output", "dir to place created archives").Short('o').Required().String()
     cmd_import_all = cmd_import.Flag("all", "Import all log files, not only channels").Bool()
+    cmd_import_parallel = cmd_import.Flag("parallel", "How many importers can run in parallel").Short('p').Default("4").Int()
 
     cmd_inspect = kingpin.Command("inspect", "Enumerate the contents of archives")
     cmd_inspect_fpath = cmd_inspect.Flag("file", "log archive file to inspect").Short('f').Required().String()
@@ -110,6 +111,7 @@ func archive_log(logs []LogInfo, archive_path string) {
     archive := CombinedLogfile{
         fpath: archive_path,
     }
+    archive.Parse()
     // For each log
     for _, log := range logs {
         //  Load the log into a LogPortion
@@ -139,7 +141,7 @@ func archive_log(logs []LogInfo, archive_path string) {
 // Entrypoint for the `import` command. Given an srcdir, scan it for log files. The log files will be sorted by channel
 // and combined into an archive file per channel, placed in `outdir`. The `impall` flag determines whether only channel
 // logs will be imported. If `true`, non-channel logs, such as PMs or server messages, will be archived too.
-func cmd_import_do(srcdir string, outdir string, impall bool) {
+func cmd_import_do(srcdir string, outdir string, impall bool, parallel int) {
     raw_logs := discover_logs(srcdir)
 
     // Sort logs by channel
@@ -153,7 +155,7 @@ func cmd_import_do(srcdir string, outdir string, impall bool) {
     fmt.Printf("Discovered %v raw logs\n\n", len(raw_logs))
 
     // For each channel
-    wg := sizedwaitgroup.New(4)  // TODO num cores
+    wg := sizedwaitgroup.New(parallel)
 
     for channel, logs := range bychannel {
         fmt.Printf("Reading %v portions for %s\n", len(logs), channel)
@@ -190,8 +192,8 @@ func cmd_inspect_do(fpath string) {
         []string{"network", log.Network},
         []string{"portions", strconv.Itoa(len(log.portions))},
         []string{"lines", strconv.Itoa(log.TotalLines())},
-        []string{"start", lmin.Format("2006-01-02")},
-        []string{"end", lmax.Format("2006-01-02")},
+        []string{"start", lmin.Format(ARCHTIMEFMT2)},
+        []string{"end", lmax.Format(ARCHTIMEFMT2)},
     }
     layout := &tabulate.Layout{Headers:[]string{"property", "value"}, Format:tabulate.SimpleFormat}
     asText, _ := tabulate.Tabulate(table, layout)
@@ -236,7 +238,7 @@ func cmd_split_do(srcpath string, destdir string) {
 func main() {
     switch kingpin.Parse() {
         case "import":
-            cmd_import_do(*cmd_import_dir, *cmd_import_output, *cmd_import_all)
+            cmd_import_do(*cmd_import_dir, *cmd_import_output, *cmd_import_all, *cmd_import_parallel)
         case "inspect":
             cmd_inspect_do(*cmd_inspect_fpath)
         case "slice":
