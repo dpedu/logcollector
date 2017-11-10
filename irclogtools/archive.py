@@ -21,7 +21,7 @@ def archiveit(output_dir, _channel, _logfiles):
 
 def by_totalsize(logfiles):
     """
-    Given a list of `LogFile`s, return the total reported size, in bytes
+    Given a list of `LogFile`s, return the total reported size, in bytes, of the log
     """
     return sum([i.bytes() for i in logfiles])
 

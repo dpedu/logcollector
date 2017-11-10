@@ -156,9 +156,13 @@ if __name__ == '__main__':
     parser.add_argument("-d", "--dir", required=True, help="user dir to find logs from")
     parser.add_argument("-o", "--output", required=True, help="local output dir")
 
-    parser.add_argument("-l", "--keep-days", type=int, help="number of days to keep", default=90)
+    parser.add_argument("-l", "--keep-days", type=int, help="number of days to keep", default=90)  # dont fetch anything newer than x days ago (?)
 
     args = parser.parse_args()
-    f = ZNCLogFetcher(host=args.host, user=args.user, ssh_key=args.key, znc_user_dir=args.dir, output_dir=args.output,
+    f = ZNCLogFetcher(host=args.host,
+                      user=args.user,
+                      ssh_key=args.key,
+                      znc_user_dir=args.dir,
+                      output_dir=args.output,
                       keep_days=args.keep_days)
     f.run()
