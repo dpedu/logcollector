@@ -34,6 +34,9 @@ var (
     cmd_slice_raw = cmd_slice.Flag("all", "Export raw lines instead of archives").Bool()
 
     cmd_split = kingpin.Command("split", "Split archives by date")
+    cmd_split_src = cmd_split.Flag("src", "Source archive file").Short('s').Required().ExistingFile()
+    cmd_split_dest = cmd_split.Flag("dest", "Dir to dump logs into").Short('d').Required().String()
+
 )
 
 type LogInfo struct {
@@ -218,6 +221,18 @@ func cmd_slice_do(srcpath string, destpath string, starttime string, endtime str
     }
 }
 
+// Split an archive back into original log files
+func cmd_split_do(srcpath string, destdir string) {
+    log := &CombinedLogfile{
+        fpath: srcpath,
+    }
+    log.Parse()
+    logs_written, err := log.WriteOriginals(destdir)
+    check(err)
+
+    fmt.Printf("Wrote %v logs\n", logs_written)
+}
+
 func main() {
     switch kingpin.Parse() {
         case "import":
@@ -227,6 +242,6 @@ func main() {
         case "slice":
             cmd_slice_do(*cmd_slice_src, *cmd_slice_dest, *cmd_slice_start, *cmd_slice_end, *cmd_slice_raw)
         case "split":
-            // TODO
+            cmd_split_do(*cmd_split_src, *cmd_split_dest)
     }
 }

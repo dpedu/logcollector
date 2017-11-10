@@ -6,6 +6,7 @@ import (
     "fmt"
     "bufio"
     "bytes"
+    "path/filepath"
     "encoding/json"
     "time"
     "sort"
@@ -102,6 +103,25 @@ func (self *CombinedLogfile) Write(destpath string) (error) {
     }
     check(w.Flush())
     return nil
+}
+
+func (self *CombinedLogfile) WriteOriginals(destdir string) (int, error) {
+    written := 0
+    for _, portion := range self.portions {
+        f, err := os.OpenFile(filepath.Join(destdir, portion.meta.Name), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+        check(err)
+        w := bufio.NewWriter(f)
+        for _, line := range portion.lines {
+            for _, b := range line {
+                w.WriteByte(b)
+            }
+            w.WriteString("\n")
+        }
+        check(w.Flush())
+        f.Close()
+        written += 1
+    }
+    return written, nil
 }
 
 func (self *CombinedLogfile) ConvertMetaToJson(meta PortionMeta) string {
