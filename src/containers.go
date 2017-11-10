@@ -150,6 +150,10 @@ func (self *CombinedLogfile) Parse() {
     PORTIONHEADER := []byte("#$$$BEGINPORTION")
     ENDPORTIONHEADER := []byte("#$$$ENDPORTION")
 
+    if _, err := os.Stat(self.fpath); os.IsNotExist(err) {
+        return
+    }
+
     f, err := os.Open(self.fpath)
     check(err)
     defer f.Close()
