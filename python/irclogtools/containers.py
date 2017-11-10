@@ -46,7 +46,7 @@ class CombinedLogfile(object):
                     if not network:
                         network = meta["network"]
                     assert channel == meta["channel"], "Portion does not match first portion's channel"
-                    assert network == meta["network"], "Portion does not match first portion's channel"
+                    # assert network == meta["network"], "Portion does not match first portion's network"
 
                 elif line.startswith(self.ENDPORTIONHEADER.encode("UTF-8")):
                     assert portion is not None and meta is not None, "Ended portion while not in portion?"
