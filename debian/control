@@ -1,0 +1,13 @@
+Source: irclogtools
+Section: unknown
+Priority: optional
+Maintainer: dave <dave@unknown>
+Build-Depends: debhelper (>=9)
+Standards-Version: 3.9.6
+Homepage: http://gitlab.davepedu.com/dave/logcollector
+
+Package: irclogtools
+Architecture: all
+Depends: ${misc:Depends}
+Description: Command-line IRC log management tools
+ In both python in golang flavors.

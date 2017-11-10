@@ -19,4 +19,5 @@ clean:
 
 .PHONY: install
 install: ilogarchive
-	cp ilogarchive $(DESTDIR)/usr/local/bin/ilogarchive
+	mkdir -p $(DESTDIR)$(PREFIX)/usr/local/bin/
+	install -D --mode 0555 ilogarchive $(DESTDIR)$(PREFIX)/usr/local/bin/

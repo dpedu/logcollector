@@ -1,5 +1,8 @@
-build/
-dist/
-testenv/
-irclogtools.egg-info/
 __pycache__
+/python/build/
+/python/dist/
+/python/testenv/
+/python/irclogtools.egg-info/
+/tmp/
+/debian/irclogtools
+/ilogarchive
