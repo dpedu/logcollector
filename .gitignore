@@ -5,4 +5,8 @@ __pycache__
 /python/irclogtools.egg-info/
 /tmp/
 /debian/irclogtools
+/debian/debhelper-build-stamp
+/debian/files
+/debian/irclogtools.debhelper.log
+/debian/irclogtools.substvars
 /ilogarchive

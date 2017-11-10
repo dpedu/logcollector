@@ -247,14 +247,14 @@ func (self *CombinedLogfile) AddPortion(newportion LogPortion) {
     if self.Channel == "" {
         self.Channel = newportion.meta.Channel  // TODO set attr on all children
     } else if newportion.meta.Channel != "" && self.Channel != newportion.meta.Channel {
-        panic(fmt.Sprintf("Attempted to add portion with channel '%s' to archive with channel '%s'",
-                          newportion.meta.Channel, self.Channel))
+        panic(fmt.Sprintf("Attempted to add portion with channel '%s' to archive with channel '%s'. Log: %s",
+                          newportion.meta.Channel, self.Channel, newportion.meta.Name))
     }
     if self.Network == "" {
         self.Network = newportion.meta.Network  // TODO set attr on all children
     } else if newportion.meta.Network != "" && self.Network != newportion.meta.Network {
-        panic(fmt.Sprintf("Attempted to add portion with network '%s' to archive with network '%s'",
-                          newportion.meta.Network, self.Network))
+        panic(fmt.Sprintf("Attempted to add portion with network '%s' to archive with network '%s'. Log: %s",
+                          newportion.meta.Network, self.Network, newportion.meta.Name))
     }
     // Remove any portions with identical date
     for i, portion := range self.portions {
