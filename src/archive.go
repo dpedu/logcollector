@@ -26,6 +26,7 @@ var (
 
     cmd_inspect = kingpin.Command("inspect", "Enumerate the contents of archives")
     cmd_inspect_fpath = cmd_inspect.Flag("file", "log archive file to inspect").Short('f').Required().String()
+    cmd_inspect_detail = cmd_inspect.Flag("detail", "show detailed portion information").Bool()
 
     cmd_slice = kingpin.Command("slice", "Extract potions of archives given a date range")
     cmd_slice_src = cmd_slice.Flag("src", "Source archive file").Short('s').Required().ExistingFile()
@@ -177,7 +178,7 @@ func cmd_import_do(srcdir string, outdir string, impall bool, parallel int) {
 }
 
 // Entrypint for the `inspect` command. Load an archive file and
-func cmd_inspect_do(fpath string) {
+func cmd_inspect_do(fpath string, detail bool) {
     log := &CombinedLogfile{
         fpath: fpath,
     }
@@ -200,6 +201,38 @@ func cmd_inspect_do(fpath string) {
     layout := &tabulate.Layout{Headers:[]string{"property", "value"}, Format:tabulate.SimpleFormat}
     asText, _ := tabulate.Tabulate(table, layout)
     fmt.Print(asText)
+
+    if detail {
+        // Print a table show line and byte counts for each portion
+        table := [][]string{}
+
+        total_bytes := 0
+        total_lines := 0
+
+        for _, portion := range log.portions {
+
+            row_bytes := 0
+            for _, line := range portion.lines {
+                row_bytes += len(line)
+            }
+            total_bytes += row_bytes
+            total_lines += len(portion.lines)
+
+            table = append(table, []string{portion.meta.Name,
+                                           portion.meta.Network,
+                                           portion.meta.Channel,
+                                           portion.meta.Date.Format(ARCHTIMEFMT2),
+                                           fmt.Sprintf("%v", len(portion.lines)),
+                                           fmt.Sprintf("%v", row_bytes)})
+        }
+
+        table = append(table, []string{"", "", "", "", "", ""})
+        table = append(table, []string{"", "", "", "total:", fmt.Sprintf("%v", total_lines), fmt.Sprintf("%v", total_bytes)})
+
+        layout := &tabulate.Layout{Headers:[]string{"portion file", "network", "channel", "date", "lines", "mbytes"}, Format:tabulate.SimpleFormat}
+        asText, _ := tabulate.Tabulate(table, layout)
+        fmt.Print(asText)
+    }
 }
 
 // Extract a date range from an archive
@@ -291,7 +324,7 @@ func main() {
         case "import":
             cmd_import_do(*cmd_import_dir, *cmd_import_output, *cmd_import_all, *cmd_import_parallel)
         case "inspect":
-            cmd_inspect_do(*cmd_inspect_fpath)
+            cmd_inspect_do(*cmd_inspect_fpath, *cmd_inspect_detail)
         case "slice":
             cmd_slice_do(*cmd_slice_src, *cmd_slice_dest, *cmd_slice_start, *cmd_slice_end, *cmd_slice_raw)
         case "split":
