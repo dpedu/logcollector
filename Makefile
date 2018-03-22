@@ -15,7 +15,7 @@ ilogarchive: tmp/ilogarchivego.stripped
 	upx $(UPXLEVEL) tmp/ilogarchivego.stripped -o ilogarchive
 
 clean:
-	rm -f ilogarchive tmp/*
+	rm -f ilogarchive ilogarchive.dev tmp/*
 
 
 .PHONY: dev
