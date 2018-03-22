@@ -17,6 +17,11 @@ ilogarchive: tmp/ilogarchivego.stripped
 clean:
 	rm -f ilogarchive tmp/*
 
+
+.PHONY: dev
+dev: tmp/ilogarchivego.raw
+	cp tmp/ilogarchivego.raw ./ilogarchive.dev
+
 .PHONY: install
 install: ilogarchive
 	mkdir -p $(DESTDIR)$(PREFIX)/usr/local/bin/
