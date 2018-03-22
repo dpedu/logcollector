@@ -17,6 +17,9 @@ import (
 )
 
 var (
+    // VERSION The version number
+    VERSION = "1.0.1"
+
     cmdImport = kingpin.Command("import", "Import raw logs into archives")
 
     cmdImportDir      = cmdImport.Flag("dir", "dir containing raw znc log files").Short('d').Required().String()
@@ -41,6 +44,8 @@ var (
 
     cmdGap    = kingpin.Command("gaps", "Find time gaps in archives")
     cmdGapSrc = cmdGap.Flag("file", "Source archive file").Short('f').Required().ExistingFile()
+
+    cmdVersion = kingpin.Command("version", "Print version")
 )
 
 // LogInfo holds info about a log we may import
@@ -319,6 +324,11 @@ func cmdGapsDo(srcpath string) {
     fmt.Print(asText)
 }
 
+// cmdVersionDo print the version number
+func cmdVersionDo() {
+    fmt.Printf("%s\n", VERSION)
+}
+
 func main() {
     switch kingpin.Parse() {
     case "import":
@@ -331,5 +341,7 @@ func main() {
         cmdSplitDo(*cmdSplitSrc, *cmdSplitDest)
     case "gaps":
         cmdGapsDo(*cmdGapSrc)
+    case "version":
+        cmdVersionDo()
     }
 }
